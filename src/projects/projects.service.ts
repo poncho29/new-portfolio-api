@@ -7,11 +7,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { validate as isUUID } from 'uuid';
 
 import { Project } from './entities/project.entity';
 
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Injectable()
 export class ProjectsService {
@@ -29,29 +31,52 @@ export class ProjectsService {
       await this.projectRepository.save(project);
       return project;
     } catch (error) {
-      console.log(error);
-      throw new InternalServerErrorException('Ayuda!');
+      this.handleDbException(error);
     }
   }
 
-  async findAll() {
-    return await this.projectRepository.find();
+  async findAll(pagination: PaginationDto) {
+    const { limit = 10, offset = 0 } = pagination;
+
+    return await this.projectRepository.find({
+      take: limit,
+      skip: offset,
+    });
   }
 
-  async findOne(id: string) {
-    const project = this.projectRepository.findOneBy({ id });
+  async findOne(term: string) {
+    // Find by uuid, title or slug
+    let project: Project;
+
+    if (isUUID(term)) {
+      project = await this.projectRepository.findOneBy({ id: term });
+    } else {
+      const queryBuilder = this.projectRepository.createQueryBuilder();
+      project = await queryBuilder
+        .where(`UPPER(title)=:title or slug= :slug`, {
+          title: term.toUpperCase(),
+          slug: term.toLowerCase(),
+        })
+        .getOne();
+    }
 
     if (!project) {
-      throw new NotFoundException(`Project with id ${id} not found`);
+      throw new NotFoundException(`Project with id ${term} not found`);
     }
+
+    return project;
   }
 
   update(id: number, updateProjectDto: UpdateProjectDto) {
     return `This action updates a #${id} project`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} project`;
+  async remove(id: string) {
+    const project = await this.findOne(id);
+
+    await this.projectRepository.remove(project);
+
+    return { message: 'Project deleted' };
   }
 
   private handleDbException(error: any) {

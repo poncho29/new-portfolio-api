@@ -6,10 +6,13 @@ import {
   Patch,
   Param,
   Delete,
+  ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('projects')
 export class ProjectsController {
@@ -21,13 +24,13 @@ export class ProjectsController {
   }
 
   @Get()
-  findAll() {
-    return this.projectsService.findAll();
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.projectsService.findAll(paginationDto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.projectsService.findOne(id);
+  @Get(':term')
+  findOne(@Param('term') term: string) {
+    return this.projectsService.findOne(term);
   }
 
   @Patch(':id')
@@ -36,7 +39,7 @@ export class ProjectsController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.projectsService.remove(+id);
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.projectsService.remove(id);
   }
 }
