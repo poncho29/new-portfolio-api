@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Project {
@@ -16,4 +16,17 @@ export class Project {
 
   @Column('text', { array: true })
   tags: string[];
+
+  // Se ejecuta antes de insertar
+  @BeforeInsert()
+  checkSlugInsert() {
+    if (!this.slug) {
+      this.slug = this.title;
+    }
+
+    this.slug = this.slug
+      .toLowerCase()
+      .replaceAll(' ', '-')
+      .replaceAll("'", '');
+  }
 }
