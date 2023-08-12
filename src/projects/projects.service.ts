@@ -67,8 +67,22 @@ export class ProjectsService {
     return project;
   }
 
-  update(id: number, updateProjectDto: UpdateProjectDto) {
-    return `This action updates a #${id} project`;
+  async update(id: string, updateProjectDto: UpdateProjectDto) {
+    // El preload busca y prepare el objeto para la actualizacion
+    const project = await this.projectRepository.preload({
+      id: id,
+      ...updateProjectDto,
+    });
+
+    if (!project)
+      throw new NotFoundException(`Project with id ${id} not found`);
+
+    try {
+      await this.projectRepository.save(project);
+      return project;
+    } catch (error) {
+      this.handleDbException(error);
+    }
   }
 
   async remove(id: string) {
@@ -84,7 +98,7 @@ export class ProjectsService {
       throw new BadRequestException(error.detail);
     }
 
-    // this.logger.error(error);
+    this.logger.error(error);
     throw new InternalServerErrorException(
       'Unexpected error, check server logs',
     );
