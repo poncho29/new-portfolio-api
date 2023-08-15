@@ -14,5 +14,6 @@ export class CreateProjectDto {
 
   @IsString({ each: true }) // each en true obliga a que sean strings
   @IsArray()
+  @IsOptional()
   tags: string[];
 }
