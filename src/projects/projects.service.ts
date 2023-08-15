@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { validate as isUUID } from 'uuid';
 
-import { Project } from './entities/project.entity';
+import { Project, ProjectImage } from './entities';
 
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -22,14 +22,24 @@ export class ProjectsService {
   constructor(
     @InjectRepository(Project)
     private readonly projectRepository: Repository<Project>,
+
+    @InjectRepository(ProjectImage)
+    private readonly projectImageRepository: Repository<ProjectImage>,
   ) {}
 
   async create(createProjectDto: CreateProjectDto) {
     try {
-      const project = this.projectRepository.create(createProjectDto);
+      const { images = [], ...restProject } = createProjectDto;
+
+      const project = this.projectRepository.create({
+        ...restProject,
+        images: images.map((image) =>
+          this.projectImageRepository.create({ url: image }),
+        ),
+      });
 
       await this.projectRepository.save(project);
-      return project;
+      return { ...project, images };
     } catch (error) {
       this.handleDbException(error);
     }
@@ -72,6 +82,7 @@ export class ProjectsService {
     const project = await this.projectRepository.preload({
       id: id,
       ...updateProjectDto,
+      images: [],
     });
 
     if (!project)

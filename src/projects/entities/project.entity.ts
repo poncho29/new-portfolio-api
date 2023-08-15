@@ -3,8 +3,11 @@ import {
   BeforeUpdate,
   Column,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+
+import { ProjectImage } from './project-image.entity';
 
 @Entity()
 export class Project {
@@ -22,6 +25,11 @@ export class Project {
 
   @Column('text', { array: true, default: [] })
   tags: string[];
+
+  @OneToMany(() => ProjectImage, (projectImage) => projectImage.project, {
+    cascade: true,
+  })
+  images?: ProjectImage[];
 
   // Se ejecuta antes de insertar
   @BeforeInsert()
